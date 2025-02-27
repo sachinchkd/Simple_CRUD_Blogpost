@@ -1,0 +1,25 @@
+
+# Python
+*.pyc
+__pycache__/
+
+.venv/
+
+# Database
+blog_posts.db
+
+# IDE
+.vscode/
+.idea/  # PyCharm       
+*.iml  # IntelliJ IDEA
+
+
+# Logs
+*.log
+
+# Environment files
+.env
+
+# Dependency directories
+node_modules/
+/dist/
