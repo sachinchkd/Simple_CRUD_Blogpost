@@ -38,6 +38,56 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        # Handle different paths
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write('Hello, world!'.encode('utf-8'))
+        elif self.path == '/api/blogs':
+            # Example of returning JSON for blogs
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            blogs = [
+                {
+                    'id': 1,
+                    'title': 'First Blog Post',
+                    'content': 'This is the content of the first blog post.',
+                    'date': '2025-03-05'
+                },
+                {
+                    'id': 2,
+                    'title': 'Second Blog Post',
+                    'content': 'This is the content of the second blog post.',
+                    'date': '2025-03-06'
+                }
+            ]
+            
+            response = json.dumps({
+                'blogs': blogs,
+                'total': len(blogs),
+                'pages': 1,
+                'current_page': 1,
+                'per_page': len(blogs),
+                'has_next': False,
+                'has_prev': False
+            })
+            
+            self.wfile.write(response.encode('utf-8'))
+        else:
+            # Handle 404 for undefined routes
+            self.send_response(404)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write('Not Found'.encode('utf-8'))
+        
+        return
+
 # Ensure the correct path is added
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
