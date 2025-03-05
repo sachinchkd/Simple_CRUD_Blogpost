@@ -9,12 +9,8 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "routes.py"
+      "dest": "app.py"
     }
-  ],
-  "env": {
-    "FLASK_ENV": "production",
-    "DATABASE_URL": "sqlite:///instance/blog_posts.db",
-    "CORS_ALLOWED_ORIGINS": "http://localhost:3000"
-  }
+  ]
 }
+  
