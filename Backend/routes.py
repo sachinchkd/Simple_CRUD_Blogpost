@@ -1,11 +1,9 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from db import db
 from models import BlogPost
 from app import app
 
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder,'index.html')
+
 
 @app.route('/api/blogs', methods=['GET'])
 def get_blogs():

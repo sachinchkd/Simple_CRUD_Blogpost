@@ -11,6 +11,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
+frontend_folder = os.path.join(os.getcwd(), '../Frontend/dist')
+dist_folder = os.path.join(frontend_folder, 'dist')
+
+@app.route('/', defaults={'filename': ''})
+@app.route('/<path:filename>')
+def index(filename):
+    if not filename:
+        return send_from_directory(frontend_folder, 'index.html')
+    return send_from_directory(dist_folder, filename)
+
 import routes
 
 with app.app_context():
