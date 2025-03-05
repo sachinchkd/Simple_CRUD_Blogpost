@@ -8,8 +8,11 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> 62e2797c187681ed9d186d7741a1abc7a4166bbc
 *.local
 
 # Editor directories and files

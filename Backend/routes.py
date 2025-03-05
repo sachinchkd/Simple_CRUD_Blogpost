@@ -4,6 +4,7 @@ from models import BlogPost
 from app import app
 
 
+
 @app.route('/api/blogs', methods=['GET'])
 def get_blogs():
     # Get pagination parameters from query string
