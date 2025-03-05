@@ -1,85 +1,117 @@
-# from flask import Flask, send_from_directory
-# from flask_cors import CORS
-# from flask_sqlalchemy import SQLAlchemy
-# from db import db
-# import os
-
-# # app=Flask(__name__)
-# app = Flask(__name__, static_folder='../Frontend/dist', static_url_path='/')
-# CORS(app)
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_posts.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# db = SQLAlchemy(app)
-
-# frontend_folder = os.path.join(os.getcwd(), '../Frontend/dist')
-# dist_folder = os.path.join(frontend_folder, 'dist')
-
-# @app.route('/', defaults={'filename': ''})
-# @app.route('/<path:filename>')
-# def index(filename):
-#     if not filename:
-#         return send_from_directory(frontend_folder, 'index.html')
-#     return send_from_directory(dist_folder, filename)
-
-# import routes
-
-# with app.app_context():
-#     db.create_all()
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-
 import os
 import sys
+import traceback
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 
-# Ensure the correct path is added
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Comprehensive logging and error handling
+print("Python Version:", sys.version)
+print("Python Path:", sys.path)
+print("Current Working Directory:", os.getcwd())
 
-# Initialize Flask and configurations
-app = Flask(__name__, static_folder='dist', static_url_path='/')
-CORS(app)
+# Try to import SQLAlchemy with error handling
+try:
+    from flask_sqlalchemy import SQLAlchemy
+except Exception as import_error:
+    print("SQLAlchemy Import Error:", str(import_error))
+    print(traceback.format_exc())
+    SQLAlchemy = None
 
-# Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL', 
-    'sqlite:///blog_posts.db'
-)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Create Flask app with extensive error handling
+def create_app():
+    try:
+        # Determine base directory
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        print("BASE_DIR:", BASE_DIR)
 
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
+        # Create Flask app
+        app = Flask(__name__, static_folder='dist', static_url_path='/')
+        CORS(app)
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, 'index.html')
+        # Database configuration with fallback
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+            'DATABASE_URL', 
+            'sqlite:///blog_posts.db'
+        )
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-import routes
+        # Initialize database with comprehensive error handling
+        db = None
+        if SQLAlchemy:
+            try:
+                db = SQLAlchemy(app)
+                
+                # Define model
+                class BlogPost(db.Model):
+                    id = db.Column(db.Integer, primary_key=True)
+                    title = db.Column(db.String(200), nullable=False)
+                    content = db.Column(db.Text, nullable=False)
+                    date = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-# Initialize Database
-def init_db():
-    with app.app_context():
-        try:
-            db.create_all()
-        except Exception as e:
-            print(f"Database initialization error: {e}")
+                    def to_json(self):
+                        return {
+                            'id': self.id,
+                            'title': self.title,
+                            'content': self.content,
+                            'date': self.date.isoformat() if self.date else None
+                        }
 
-# Vercel Handler
+                # Create tables
+                with app.app_context():
+                    try:
+                        db.create_all()
+                    except Exception as db_create_error:
+                        print("Database Creation Error:", str(db_create_error))
+                        print(traceback.format_exc())
+
+            except Exception as db_init_error:
+                print("Database Initialization Error:", str(db_init_error))
+                print(traceback.format_exc())
+                db = None
+
+        # Debug route
+        @app.route('/debug')
+        def debug_info():
+            return jsonify({
+                "status": "ok",
+                "python_version": sys.version,
+                "base_dir": BASE_DIR,
+                "python_path": sys.path,
+                "cwd": os.getcwd(),
+                "database_status": "initialized" if db else "not initialized"
+            })
+
+        # Fallback route
+        @app.route('/', defaults={'path': ''})
+        @app.route('/<path:path>')
+        def catch_all(path):
+            print(f"Received path: {path}")
+            return f"Catch-all route. Path: {path}", 200
+
+        return app
+
+    except Exception as app_creation_error:
+        print("App Creation Error:", str(app_creation_error))
+        print(traceback.format_exc())
+        raise
+
+# Create the app
+try:
+    app = create_app()
+except Exception as e:
+    print("Fatal App Creation Error:", str(e))
+    print(traceback.format_exc())
+    app = None
+
+# Vercel handler
 def handler(req, res):
-    init_db()
+    if app is None:
+        raise Exception("App could not be created")
     return app
-
-# Initialize database when the module is imported
-init_db()
 
 # For local development
 if __name__ == '__main__':
-    app.run(debug=True)
+    if app:
+        app.run(debug=True)
+    else:
+        print("Could not start the application")
