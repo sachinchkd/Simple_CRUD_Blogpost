@@ -1,9 +1,9 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from db import db
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../Frontend/dist', static_url_path='/')
 CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_posts.db'
